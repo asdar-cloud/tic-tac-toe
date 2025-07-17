@@ -1,17 +1,102 @@
 #include <stdio.h>
 #include <string.h>
 
-/*
-1) Board initialization (initboard)
-2) Drawing board (drawboard)
-3) Separate functions for check global and local wins
-4) Main game pocess, including moves and victory checks
-*/
+void initboard();
+void drawboard();
+int localwin(int glbrow, int glbcol);
+int globalwin();
+int setlang();
+void setfield(int plr, int *row, int *col);
+
 int GDraw = 0; // For detecting draw on entire field
 char board[3][3][3][3]; // this contain information about board
 int lang; // This will contain information about chosen language of the game (0 - ru; 1 - en)
 int draw[3][3] = {0};
 int win[3][3] = {0}; // assigning a default value (none, 1 - X, 2 - O) to localwin means that none of the mini-boards have been won yet
+
+
+
+int main()
+{
+    int GRow = -1, GCol = -1, LRow = -1, LCol = -1, plr = 1, tm[3][3] = {0}; // tm will count how many moves the player has made in each local board (I need it to detect draw on the board)
+    initboard();
+    drawboard();
+    lang = setlang();
+    setfield(plr, &GRow, &GCol);
+    while (GRow == -1) 
+    {
+            switch (lang)
+            {
+                case 0: printf("Не выйдет. Попробуйте снова \n"); break;
+                case 1: printf("You can't do that. Try again \n"); break;
+            }
+            setfield(plr, &GRow, &GCol);
+    }
+    while (1)
+    {
+        plr = (plr % 2) ? 1 : 2;
+        if (GDraw == 9) return 0;
+        if (draw[GRow][GCol] == 1 || win[GRow][GCol] != 0)
+        {
+            while (1)
+            {
+                setfield(plr, &GRow, &GCol);
+                if (GRow == -1)
+                {
+                    switch (lang)
+                    {
+                        case 0: printf("Не выйдет. Попробуйте снова. \n"); break;
+                        case 1: printf("You can't do that. Try again. \n"); break;
+                    }
+                    setfield(plr, &GRow, &GCol);
+                }
+                else break;
+            }
+        }
+        switch (lang)
+        {
+            case 0: printf("%d-й игрок, выберите клетку (строку и колонку), которую желаете занять. Координаты вашего поля: %d %d. -> ", plr, (GRow + 1), (GCol + 1)); break;
+            case 1: printf("Player %d, choose cell (row and collumn) you wish to occupy. You board located at %d %d coordinates. -> ", plr, (GRow + 1), (GCol + 1)); break;
+        }
+        scanf("%d %d", &LRow, &LCol); printf("\n"); LRow--; LCol--;
+        if (LRow >= 0 && LRow < 3 && LCol >= 0 && LCol < 3 && board[GRow][GCol][LRow][LCol] == ' ') // check if this step is possible
+        {
+            board[GRow][GCol][LRow][LCol] = (plr == 1) ? 'X' : 'O';
+            tm[GRow][GCol]++;
+            if (localwin(GRow, GCol) == 1)
+            {
+                win[GRow][GCol] = (plr == 1) ? 1 : 2;
+            }
+            if (globalwin() == 1)
+            {
+                switch (lang)
+                {
+                    case 0: printf("Поздравляю с победой, %d-й игрок! \n", plr); break;
+                    case 1: printf("Congratulations, player number %d, you won! \n", plr); break;
+                }
+                drawboard();
+                return 0;
+            }
+            if (tm[GRow][GCol] == 9)
+            {
+                draw[GRow][GCol] = 1;
+                GDraw++;
+            }
+            drawboard();
+            GRow = LRow; GCol = LCol; plr++;
+        }
+        else 
+        {
+            switch (lang)
+            {
+                case 0: printf("Этот ход невозможен. Попробуйте ещё раз. \n"); break;
+                case 1: printf("This is impossible. Try again. \n"); break;
+            }
+            while (getchar() != '\n'); // Clearing the buffer
+        }
+    }
+    return 0;
+}
 
 void initboard() // asigning standard value (space) for every parts of field
 {
@@ -161,86 +246,4 @@ void setfield(int plr, int *row, int *col) // This function is responsible for s
         return;
     }
     else (*row) = -1;
-}
-
-int main()
-{
-    int GRow = -1, GCol = -1, LRow = -1, LCol = -1, plr = 1, tm[3][3] = {0}; // tm will count how many moves the player has made in each local board (I need it to detect draw on the board)
-    initboard();
-    drawboard();
-    lang = setlang();
-    setfield(plr, &GRow, &GCol);
-    while (GRow == -1) 
-    {
-            switch (lang)
-            {
-                case 0: printf("Не выйдет. Попробуйте снова \n"); break;
-                case 1: printf("You can't do that. Try again \n"); break;
-            }
-            setfield(plr, &GRow, &GCol);
-    }
-    while (1)
-    {
-        plr = (plr % 2) ? 1 : 2;
-        if (GDraw == 9) return 0;
-        if (draw[GRow][GCol] == 1 || win[GRow][GCol] != 0)
-        {
-            while (1)
-            {
-                setfield(plr, &GRow, &GCol);
-                if (GRow == -1)
-                {
-                    switch (lang)
-                    {
-                        case 0: printf("Не выйдет. Попробуйте снова. \n"); break;
-                        case 1: printf("You can't do that. Try again. \n"); break;
-                    }
-                    setfield(plr, &GRow, &GCol);
-                }
-                else break;
-            }
-        }
-        switch (lang)
-        {
-            case 0: printf("%d-й игрок, выберите клетку (строку и колонку), которую желаете занять. Координаты вашего поля: %d %d. -> ", plr, (GRow + 1), (GCol + 1)); break;
-            case 1: printf("Player %d, choose cell (row and collumn) you wish to occupy. You board located at %d %d coordinates. -> ", plr, (GRow + 1), (GCol + 1)); break;
-        }
-        scanf("%d %d", &LRow, &LCol); printf("\n"); LRow--; LCol--;
-        if (LRow >= 0 && LRow < 3 && LCol >= 0 && LCol < 3 && board[GRow][GCol][LRow][LCol] == ' ') // check if this step is possible
-        {
-            board[GRow][GCol][LRow][LCol] = (plr == 1) ? 'X' : 'O';
-            tm[GRow][GCol]++;
-            if (localwin(GRow, GCol) == 1)
-            {
-                win[GRow][GCol] = (plr == 1) ? 1 : 2;
-            }
-            if (globalwin() == 1)
-            {
-                switch (lang)
-                {
-                    case 0: printf("Поздравляю с победой, %d-й игрок! \n", plr); break;
-                    case 1: printf("Congratulations, player number %d, you won! \n", plr); break;
-                }
-                drawboard();
-                return 0;
-            }
-            if (tm[GRow][GCol] == 9)
-            {
-                draw[GRow][GCol] = 1;
-                GDraw++;
-            }
-            drawboard();
-            GRow = LRow; GCol = LCol; plr++;
-        }
-        else 
-        {
-            switch (lang)
-            {
-                case 0: printf("Этот ход невозможен. Попробуйте ещё раз. \n"); break;
-                case 1: printf("This is impossible. Try again. \n"); break;
-            }
-            while (getchar() != '\n'); // Clearing the buffer
-        }
-    }
-    return 0;
 }
