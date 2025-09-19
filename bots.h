@@ -1,1 +1,0 @@
-void easy(char board[3][3][3][3], int GRow, int GCol);
