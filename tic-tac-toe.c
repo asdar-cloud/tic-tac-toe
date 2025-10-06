@@ -5,6 +5,8 @@
 
 void easybot(char board[3][3][3][3], int GRow, int GCol, int *LRow, int *LCol); 
 void botfield(int *row, int *col); 
+void mediumbot(char board[3][3][3][3], int GRow, int GCol, int *LRow, int *LCol);
+void hardbot(char board[3][3][3][3], int GRow, int GCol, int *LRow, int *LCol);
 
 void initboard();
 void drawboard();
@@ -15,15 +17,17 @@ void setfield(int plr, int *row, int *col);
 int setbot();
 int gameplay(int GRow, int GCol, int plr);
 int botplay(int GRow, int GCol, int plr);
+int wincond(int GRow, int GCol);
+
+const int RC = 3; // quantity of rows and columns
 
 int GDraw = 0; // For detecting draw on entire field
-char board[3][3][3][3]; // this contain information about board
+char board[3][3][3][3] = {'N'}; // this contain information about board ('O' 'X')
 int lang; // This will contain information about chosen language of the game (0 - ru; 1 - en)
 int draw[3][3] = {0};
-int win[3][3] = {0}; // assigning a default value (none, 1 - X, 2 - O) to localwin means that none of the mini-boards have been won yet
+int win[3][3] = {0}; // (0 - none, 1 - X, 2 - O) assigning a default value (0) to localwin means that none of the mini-boards have been won yet
 int bot; // This will contain information about chosen version of bot
-
-
+int wincon[3][3] = {0}; // this will contain information about victoryy condition on the local board
 int main()
 {
     int GRow = -1, GCol = -1, plr = 1;
@@ -335,7 +339,7 @@ int botplay(int GRow, int GCol, int plr)
                     else break;
                 }
             }
-            else 
+            else
             {
                 botfield(&GRow, &GCol);
             }
@@ -351,7 +355,11 @@ int botplay(int GRow, int GCol, int plr)
         }
         else
         {
-            easybot(board, GRow, GCol, &LRow, &LCol);
+            switch (bot)
+            {
+                case 1: easybot(board, GRow, GCol, &LRow, &LCol); break;
+                case 2: mediumbot(board, GRow, GCol, &LRow, &LCol); break;
+            }
         }
 
         if (LRow >= 0 && LRow < 3 && LCol >= 0 && LCol < 3 && board[GRow][GCol][LRow][LCol] == ' ') // check if this step is possible
@@ -378,7 +386,9 @@ int botplay(int GRow, int GCol, int plr)
                 draw[GRow][GCol] = 1;
                 GDraw++;
             }
-            
+
+            wincon[GRow][GCol] = wincond(GRow, GCol);
+
             GRow = LRow; GCol = LCol; plr++;
         }
         else 
@@ -396,28 +406,217 @@ int botplay(int GRow, int GCol, int plr)
 
 void easybot(char board[3][3][3][3], int GRow, int GCol, int *LRow, int *LCol) 
 {
-    srandom(time(NULL));
+    srandom(time(0)); 
     while (1)
     {
-        int row = random() % 3;
-        int col = random() % 3;
+        int row = rand() % 3;
+        int col = rand() % 3;
         if (row >= 0 && row < 3 && col >= 0 && col < 3 && board[GRow][GCol][row][col] == ' ')
         {
             *LRow = row; *LCol = col;
+            switch (lang)
+            {
+                case 0: printf("А мы вот так! (%d %d)\n\n", row++, col++); break;
+                case 1: printf("Here we go (%d %d)\n\n", row++, col++); break;
+            }
             return;
         }
     }
+
 }
 
-void botfield(int *row, int *col) //temp
+void mediumbot(char board[3][3][3][3], int GRow, int GCol, int *LRow, int *LCol)
 {
+    srandom(time(0));   
     while (1)
     {
-        *row = random() % 3;
-        *col = random() % 3;
+        switch (wincon[GRow][GCol])
+        {
+            case 1: *LRow = 0; *LCol = 2; return; break;
+            case 2: *LRow = 0; *LCol = 0; return; break;
+            case 3: *LRow = 0; *LCol = 1; return; break;
+
+            case 11: *LRow = 1; *LCol = 2; return; break;
+            case 12: *LRow = 1; *LCol = 0; return; break;
+            case 13: *LRow = 1; *LCol = 1; return; break;
+
+            case 21: *LRow = 2; *LCol = 2; return; break;
+            case 22: *LRow = 2; *LCol = 0; return; break;
+            case 23: *LRow = 2; *LCol = 1; return; break;
+
+            case 31: *LRow = 2; *LCol = 2; return; break;
+            case 32: *LRow = 0; *LCol = 0; return; break;
+            case 33: *LRow = 1; *LCol = 1; return; break;
+
+            case 41: *LRow = 0; *LCol = 2; return; break;
+            case 42: *LRow = 2; *LCol = 0; return; break;
+            case 43: *LRow = 1; *LCol = 1; return; break;
+
+            case 51: *LRow = 2; *LCol = 0; return; break;
+            case 52: *LRow = 0; *LCol = 0; return; break;
+            case 53: *LRow = 1; *LCol = 0; return; break;
+
+            case 61: *LRow = 2; *LCol = 1; return; break;
+            case 62: *LRow = 0; *LCol = 1; return; break;
+            case 63: *LRow = 1; *LCol = 1; return; break;
+
+            case 71: *LRow = 2; *LCol = 2; return; break;
+            case 72: *LRow = 0; *LCol = 2; return; break;
+            case 73: *LRow = 1; *LCol = 2; return; break;
+        }
+        int row = rand() % 3;
+        int col = rand() % 3;
+        if (row >= 0 && row < 3 && col >= 0 && col < 3 && board[GRow][GCol][row][col] == ' ')
+        {
+            *LRow = row; *LCol = col;
+            switch (lang)
+            {
+                case 0: printf("А мы вот так! (%d %d)\n\n", row++, col++); break;
+                case 1: printf("Here we go (%d %d)\n\n", row++, col++); break;
+            }
+            return;
+        }
+    }
+
+}
+
+void hardbot(char board[3][3][3][3], int GRow, int GCol, int *LRow, int *LCol)
+{
+    //TODO
+}
+
+void botfield(int *row, int *col)
+{
+    if (bot == 2 || bot == 3)
+    {
+        for (int i = 0; i < RC; i++)
+        {
+            for (int j = 0; j < RC; i++)
+            {
+                if (wincon[i][j] != 0 && win[i][j] == 0)
+                {
+                    *row = i; *col = j;
+                    return;
+                }
+            }
+        }
+    }
+    srandom(time(0));
+    while (1)
+    {
+        *row = rand() % 3;
+        *col = rand() % 3;
         if (*row >= 0 && *row < 3 && *col >= 0 && *col < 3 && draw[*row][*col] != 1 && win[*row][*col] == 0)
         {
             return;
         }
     }
+}
+
+int wincond(int GRow, int GCol)
+{
+    if (board[GRow][GCol][0][0] == 'O' && board[GRow][GCol][0][1] == 'O' && board[GRow][GCol][0][2] == 'N') // O O -
+    {
+        return 1;
+    }
+    else if (board[GRow][GCol][0][0] == 'N' && board[GRow][GCol][0][1] == 'O' && board[GRow][GCol][0][2] == 'O') // - O O
+    {
+        return 2;
+    }
+    else if (board[GRow][GCol][0][0] == 'O' && board[GRow][GCol][0][1] == 'N' && board[GRow][GCol][0][2] == 'O') // O - O
+    {
+        return 3;
+    }
+    // second row
+    else if (board[GRow][GCol][1][0] == 'O' && board[GRow][GCol][1][1] == 'O' && board[GRow][GCol][1][2] == 'N')
+    {
+        return 11;
+    }
+    else if (board[GRow][GCol][1][0] == 'N' && board[GRow][GCol][1][1] == 'O' && board[GRow][GCol][1][2] == 'O')
+    {
+        return 12;
+    }
+    else if (board[GRow][GCol][1][0] == 'O' && board[GRow][GCol][1][1] == 'N' && board[GRow][GCol][1][2] == 'O')
+    {
+        return 13;
+    }
+    //third row
+    else if (board[GRow][GCol][2][0] == 'O' && board[GRow][GCol][2][1] == 'O' && board[GRow][GCol][2][2] == 'N')
+    {
+        return 21;
+    }
+    else if (board[GRow][GCol][2][0] == 'N' && board[GRow][GCol][2][1] == 'O' && board[GRow][GCol][2][2] == 'O')
+    {
+        return 22;
+    }
+    else if (board[GRow][GCol][2][0] == 'O' && board[GRow][GCol][2][1] == 'N' && board[GRow][GCol][2][2] == 'O')
+    {
+        return 23;
+    }
+    // first diagonal
+    else if (board[GRow][GCol][0][0] == 'O' && board[GRow][GCol][1][1] == 'O' && board[GRow][GCol][2][2] == 'N')
+    {
+        return 31;
+    }
+    else if (board[GRow][GCol][0][0] == 'N' && board[GRow][GCol][1][1] == 'O' && board[GRow][GCol][2][2] == 'O')
+    {
+        return 32;
+    }
+    else if (board[GRow][GCol][0][0] == 'O' && board[GRow][GCol][1][1] == 'N' && board[GRow][GCol][2][2] == 'O')
+    {
+        return 33;
+    }
+    // second diagonal
+    else if (board[GRow][GCol][2][0] == 'O' && board[GRow][GCol][1][1] == 'O' && board[GRow][GCol][0][2] == 'N')
+    {
+        return 41;
+    }
+    else if (board[GRow][GCol][2][0] == 'N' && board[GRow][GCol][1][1] == 'O' && board[GRow][GCol][0][2] == 'O')
+    {
+        return 42;
+    }
+    else if (board[GRow][GCol][2][0] == 'O' && board[GRow][GCol][1][1] == 'N' && board[GRow][GCol][0][2] == 'O')
+    {
+        return 43;
+    }
+    // first column
+    else if (board[GRow][GCol][0][0] == 'O' && board[GRow][GCol][1][0] == 'O' && board[GRow][GCol][2][0] == 'N')
+    {
+        return 51;
+    }
+    else if (board[GRow][GCol][0][0] == 'N' && board[GRow][GCol][1][0] == 'O' && board[GRow][GCol][2][0] == 'O')
+    {
+        return 52;
+    }
+    else if (board[GRow][GCol][0][0] == 'O' && board[GRow][GCol][1][0] == 'N' && board[GRow][GCol][2][0] == 'O')
+    {
+        return 53;
+    }
+    // seconf column
+    else if (board[GRow][GCol][0][1] == 'O' && board[GRow][GCol][1][1] == 'O' && board[GRow][GCol][2][1] == 'N')
+    {
+        return 61;
+    }
+    else if (board[GRow][GCol][0][1] == 'N' && board[GRow][GCol][1][1] == 'O' && board[GRow][GCol][2][1] == 'O')
+    {
+        return 62;
+    }
+    else if (board[GRow][GCol][0][1] == 'O' && board[GRow][GCol][1][1] == 'N' && board[GRow][GCol][2][1] == 'O')
+    {
+        return 63;
+    }
+    // third column
+    else if (board[GRow][GCol][0][2] == 'O' && board[GRow][GCol][1][2] == 'O' && board[GRow][GCol][2][2] == 'N')
+    {
+        return 71;
+    }
+    else if (board[GRow][GCol][0][2] == 'N' && board[GRow][GCol][1][2] == 'O' && board[GRow][GCol][2][2] == 'O')
+    {
+        return 72;
+    }
+    else if (board[GRow][GCol][0][2] == 'O' && board[GRow][GCol][1][2] == 'N' && board[GRow][GCol][2][2] == 'O')
+    {
+        return 73;
+    }
+    return 0;
 }
