@@ -19,12 +19,12 @@ int localwin(int glbrow, int glbcol);
 int globalwin();
 int gameplay(int GRow, int GCol, int plr, int bot);
 void setcell(int GRow, int GCol, int plr, int *LRow, int *LCol);
+void bbot(int GRow, int GCol, int *LRow, int *LCol);
 void ebot(int GRow, int GCol, int *LRow, int *LCol);
 void mbot(int GRow, int GCol, int *LRow, int *LCol);
-void hbot(int GRow, int GCol, int *LRow, int *LCol);
 int randcell();
-void winpos(int *lrow, int *lcol, int GRow, int GCol);
-
+void winpos(int *lrow, int *lcol, int GRow, int GCol, int plr);
+int glblwinpos(int plr, int GRow, int GCol);
 
 int main()
 {
@@ -139,8 +139,8 @@ int setbot()
     int bot{};
     switch(lang)
     {
-        case 0: printf("Выберите вариант игры: 0 - два игрока; 1 - бот лёгкой сложности; 2 - бот средней сложности; 3 - бот высокой сложности -> "); break;
-        case 1: printf("Choose game mode: 0 - 2p mode; 1 - with easy bot; 2 - with medium bot; 3 - with hard bot -> "); break;
+        case 0: printf("Выберите вариант игры: 0 - два игрока; 1 - бот детской сложности; 2 - бот лёгкой сложности; 3 - бот средней сложности -> "); break;
+        case 1: printf("Choose game mode: 0 - 2p mode; 1 - with baby bot; 2 - with easy bot; 3 - with medium bot -> "); break;
     }
     while (1)
     {
@@ -271,9 +271,9 @@ int gameplay(int GRow, int GCol, int plr, int bot)
         {
             switch (bot)
             {
-                case 1: ebot(GRow, GCol, &LRow, &LCol); break;
-                case 2: mbot(GRow, GCol, &LRow, &LCol); break;
-                case 3: hbot(GRow, GCol, &LRow, &LCol); break;
+                case 1: bbot(GRow, GCol, &LRow, &LCol); break;
+                case 2: ebot(GRow, GCol, &LRow, &LCol); break;
+                case 3: mbot(GRow, GCol, &LRow, &LCol); break;
             }
         }
 
@@ -337,8 +337,8 @@ void setcell(int GRow, int GCol, int plr, int *LRow, int *LCol)
     }
 }
 
-// easy bot (working just with random)
-void ebot(int GRow, int GCol, int *LRow, int *LCol)
+// baby bot (working just with random)
+void bbot(int GRow, int GCol, int *LRow, int *LCol)
 {
     while (1)
     {
@@ -361,14 +361,14 @@ void ebot(int GRow, int GCol, int *LRow, int *LCol)
     }
 }
 
-// medium bot (in case of possible win in 1 step, do it to gane victory. If there is not such step, just uses random)
-void mbot(int GRow, int GCol, int *LRow, int *LCol)
+// easy bot (in case of possible win in one step, does it to gane victory. If there is not such step, just uses random)
+void ebot(int GRow, int GCol, int *LRow, int *LCol)
 {
     int row{-1}, col{-1};
-    winpos(&row, &col, GRow, GCol);
+    winpos(&row, &col, GRow, GCol, 1);
     if (row == -1)
     {
-        ebot(GRow, GCol, &row, &col);
+        bbot(GRow, GCol, &row, &col);
         *LRow = row; *LCol = col;
         return;
     }
@@ -385,13 +385,45 @@ void mbot(int GRow, int GCol, int *LRow, int *LCol)
     return;
 }
 
-// hard bot ...
-void hbot(int GRow, int GCol, int *LRow, int *LCol)
+// medium bot ...
+void mbot(int GRow, int GCol, int *LRow, int *LCol)
 {
-    //TODO
+    // TODO
+    // Должен чекать все поля на место возможной победы соперника и, по возможности, избегать таких полей
+    // При возможности своей и победы соперника, которая ведёт к победному полю, должен анализировать премлимость жертвы ради своей победы
+    // предотвращать победу соперника или делать выигрышный ход каждый раз, иначе - рандом
+
+    // Checking for all possible win positions for future tricks
+    int row[RC][RC] = {-1}, col[RC][RC] = {-1}, winp[2]{};
+    for (int i{0}; i < RC; i++)
+    {
+        for (int j{0}; j < RC; j++)
+        {
+            winpos(&row[i][j], &col[i][j], i, j, 1);
+        }
+    }
+
+    // Checking if there field with potential win for player
+    int plrrow[RC][RC] = {-1}, plrcol[RC][RC] = {-1};
+    for (int i{0}; i < RC; i++)
+    {
+        for (int j{0}; j < RC; j++)
+        {
+            winpos(&plrrow[i][j], &plrcol[i][j], i, j, 2);
+        }
+    }
+
+    for (int i{0}; i < RC; i++)
+    {
+        for (int j{0}; j < RC; j++)
+        {
+            
+        }
+    }
+
 }
 
-// function for random generation of cell based on random_device for TRUE random
+// function for random generation of cell
 int randcell() {
     static std::random_device rd;
     static std::mt19937 gen(rd());
@@ -401,7 +433,7 @@ int randcell() {
 }
 
 // function for detecting step, that will bring local win for bot
-void winpos(int *lrow, int *lcol, int GRow, int GCol)
+void winpos(int *lrow, int *lcol, int GRow, int GCol, int plr)
 {
     int wincount{0};
     int dotzero[2] = {-1};
@@ -411,7 +443,7 @@ void winpos(int *lrow, int *lcol, int GRow, int GCol)
     {
         for (int col{0}; col > RC; col++)
         {
-            if (board[GRow][GCol][row][col] == 'O')
+            if (board[GRow][GCol][row][col] == (plr == 1) ? 'O' : 'X')
             {
                 wincount++;
             }
@@ -433,7 +465,7 @@ void winpos(int *lrow, int *lcol, int GRow, int GCol)
     {
         for (int row{0}; row < RC; row++)
         {
-            if (board[GRow][GCol][row][col] == 'O')
+            if (board[GRow][GCol][row][col] == (plr == 1) ? 'O' : 'X')
             {
                 wincount++;
             }
@@ -453,7 +485,7 @@ void winpos(int *lrow, int *lcol, int GRow, int GCol)
     // looking for the win position at diagonals
     for (int rc{0}; rc < RC; rc++)
     {
-        if (board[GRow][GCol][rc][rc] == 'O')
+        if (board[GRow][GCol][rc][rc] == (plr == 1) ? 'O' : 'X')
         {
             wincount++;
         }
@@ -469,7 +501,7 @@ void winpos(int *lrow, int *lcol, int GRow, int GCol)
     }
     for (int rc{3}; rc > 0; rc--)
     {
-        if (board[GRow][GCol][rc][rc] == 'O')
+        if (board[GRow][GCol][rc][rc] == (plr == 1) ? 'O' : 'X')
         {
             wincount++;
         }
@@ -483,4 +515,82 @@ void winpos(int *lrow, int *lcol, int GRow, int GCol)
         *lrow = dotzero[0]; *lcol = dotzero[1];
         return;
     }
+}
+
+// function for detecting step, that will bring local win for bot
+int glblwinpos(int plr, int GRow, int GCol)
+{
+    int wincount{0}, dotzero[3][3]{0};
+    for (int row{0}; row < RC; row++)
+    {
+        for (int col{0}; col < RC; col++)
+        {
+            if (win[row][col] == plr)
+            {
+                wincount++; dotzero[row][col] = 1;
+            }
+        }
+    }
+    if (wincount == 2)
+    {
+        if (dotzero[GRow][GCol] == 1)
+        {
+            return 0;
+        }
+    }
+    wincount = 0;
+
+    for (int col{0}; col < RC; col++)
+    {
+        for (int row{0}; row < RC; row++)
+        {
+            if (win[row][col] == plr)
+            {
+                wincount++; dotzero[row][col] = 1;
+            }
+        }
+    }
+    if (wincount == 2)
+    {
+        if (dotzero[GRow][GCol] == 1)
+        {
+            return 0;
+        }
+    }
+    wincount = 0;
+
+    for (int rc{0}; rc < RC; rc++)
+    {
+        if (win[rc][rc] == plr)
+        {
+            wincount++; dotzero[rc][rc] = 1;
+        }
+    }
+    if (wincount == 2)
+    {
+        if (dotzero[GRow][GCol] == 1)
+        {
+            return 0;
+        }
+    }
+    wincount = 0;
+
+    for (int row{RC - 1}; row >= 0; row++)
+    {
+        for (int col{0}; col < RC; col++)
+        {
+            if (win[row][col] == plr)
+            {
+                wincount++; dotzero[row][col] = 1;
+            }
+        }
+    }
+    if (wincount == 2)
+    {
+        if (dotzero[GRow][GCol] == 1)
+        {
+            return 0;
+        }
+    }
+    return 1;
 }
