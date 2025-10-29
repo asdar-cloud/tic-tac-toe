@@ -28,6 +28,8 @@ int draw[3][3] = {0};
 int win[3][3] = {0}; // (0 - none, 1 - X, 2 - O) assigning a default value (0) to localwin means that none of the mini-boards have been won yet
 int bot; // This will contain information about chosen version of bot
 int wincon[3][3] = {0}; // this will contain information about victoryy condition on the local board
+
+
 int main()
 {
     int GRow = -1, GCol = -1, plr = 1;
@@ -183,7 +185,7 @@ void setfield(int plr, int *row, int *col) // This function is responsible for s
         case 0: printf("%d-й игрок, выберите поле, в котором будете играть -> ", plr); break;
         case 1: printf("Player %d, you have to choose board you will play in -> ", plr); break;
     }
-    scanf("%d %d", row, col); printf("\n"); (*row)--; (*col)--; // assigning player`s choice to row and col
+    scanf("%d %d", row, col); (*row)--; (*col)--; // assigning player`s choice to row and col
     if (*row >= 0 && *row < 3 && *col >= 0 && *col < 3 && draw[*row][*col] != 1 && win[*row][*col] == 0) // check if this valid values
     {
         return;
@@ -386,9 +388,16 @@ int botplay(int GRow, int GCol, int plr)
                 draw[GRow][GCol] = 1;
                 GDraw++;
             }
-
+            
             wincon[GRow][GCol] = wincond(GRow, GCol);
-
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    printf("%d %d: %d\n", i + 1, j + 1, wincon[i][j]);
+                }
+            }
+            
             GRow = LRow; GCol = LCol; plr++;
         }
         else 
@@ -427,7 +436,8 @@ void easybot(char board[3][3][3][3], int GRow, int GCol, int *LRow, int *LCol)
 
 void mediumbot(char board[3][3][3][3], int GRow, int GCol, int *LRow, int *LCol)
 {
-    srandom(time(0));   
+    srandom(time(0)); 
+    int row, col;  
     while (1)
     {
         switch (wincon[GRow][GCol])
@@ -463,19 +473,23 @@ void mediumbot(char board[3][3][3][3], int GRow, int GCol, int *LRow, int *LCol)
             case 71: *LRow = 2; *LCol = 2; return; break;
             case 72: *LRow = 0; *LCol = 2; return; break;
             case 73: *LRow = 1; *LCol = 2; return; break;
-        }
-        int row = rand() % 3;
-        int col = rand() % 3;
-        if (row >= 0 && row < 3 && col >= 0 && col < 3 && board[GRow][GCol][row][col] == ' ')
-        {
-            *LRow = row; *LCol = col;
-            switch (lang)
+
+            case 0: 
+            row = rand() % 3;
+            col = rand() % 3;
+            if (row >= 0 && row < 3 && col >= 0 && col < 3 && board[GRow][GCol][row][col] == ' ')
             {
-                case 0: printf("А мы вот так! (%d %d)\n\n", row++, col++); break;
-                case 1: printf("Here we go (%d %d)\n\n", row++, col++); break;
+                *LRow = row; *LCol = col;
+                switch (lang)
+                {
+                    case 0: printf("А мы вот так! (%d %d)\n\n", row++, col++); break;
+                    case 1: printf("Here we go (%d %d)\n\n", row++, col++); break;
+                }
+                return;
             }
-            return;
+            break;
         }
+        
     }
 
 }
