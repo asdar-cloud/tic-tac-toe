@@ -1,15 +1,13 @@
 #include <cstring>
-#include <iostream>
 #include <random>
 
-#define RC 3; // quantity of rows and columns
-
-char board[3][3][3][3] = {'N'}; // this contain information about board ('O' 'X')
+const int RC{3}; // quantity of rows and columns
+char board[3][3][3][3] = {' '}; // this contain information about board ('O' 'X')
 int draw[3][3] = {0}; // this will contain information about draw existance in some field
 int GDraw = 0; // For detecting draw on entire field
 int lang{}; // This will contain information about chosen language of the game (0 - ru; 1 - en)
 int win[3][3] = {0}; // (0 - none, 1 - X, 2 - O) assigning a default value (0) to localwin means that none of the mini-boards have been won yet
-int bot{}; // This will contain information about chosen version of bot
+
 
 // function's prototypes
 void initboard();
@@ -19,23 +17,24 @@ int setbot();
 void setfield(int plr, int *row, int *col);
 int localwin(int glbrow, int glbcol);
 int globalwin();
-int gameplay(int GRow, int GCol, int plr);
+int gameplay(int GRow, int GCol, int plr, int bot);
 void setcell(int GRow, int GCol, int plr, int *LRow, int *LCol);
 void ebot(int GRow, int GCol, int *LRow, int *LCol);
 void mbot(int GRow, int GCol, int *LRow, int *LCol);
 void hbot(int GRow, int GCol, int *LRow, int *LCol);
 int randcell();
-void winpos(int (*pos)[3][3], int GRow, int GCol);
+void winpos(int *lrow, int *lcol, int GRow, int GCol);
 
 
 int main()
 {
     int GRow{-1}, GCol{-1}, plr{1};
+    int bot{}; // This will contain information about chosen version of bot
     initboard();
     drawboard();
     lang = setlang();
     bot = setbot();
-    gameplay(GRow, GCol, plr);
+    gameplay(GRow, GCol, plr, bot);
     return 0;
 }
 
@@ -59,12 +58,12 @@ void initboard() // asigning standard value (space) for every parts of field
 
 void drawboard() // Here you can see drawing process
 {
-   int lclrow = 0;
+    int lclrow = 0;
    for (int globalrow = 0; globalrow < 3; globalrow++)                                    //-
    {                                                                                      // |
     switch (globalrow)                                                                    // |
     {                                                                                     // |
-        case 1: case 2: printf("=========================================\n");     // |
+        case 1: case 2: printf("=========================================\n");            // |
     }                                                                                      //  >  drawing global board
     for (int localrow = 0; localrow < 5; localrow++)                                      // |
     {                                                                                     // |
@@ -106,8 +105,8 @@ void drawboard() // Here you can see drawing process
         }
         printf("\n");
     }
-   }
-   printf("\n");
+    }
+    printf("\n");
 }
 
 int setlang()
@@ -145,7 +144,7 @@ int setbot()
     }
     while (1)
     {
-        std::cin >> bot;
+        scanf("%d", &bot);
         if (bot >= 0 && bot <= 3)
         {
             return bot;
@@ -217,13 +216,21 @@ int globalwin() // check if there's a victory in the game
     return 0;
 }
 
-int gameplay(int GRow, int GCol, int plr)
+int gameplay(int GRow, int GCol, int plr, int bot)
 {
     int LRow = -1, LCol = -1, tm[3][3] = {0}; // tm will count how many moves the player has made in each local board (I need it to detect draw on the board)
     while (1)
     {
         plr = (plr % 2) ? 1 : 2;
-        if (GDraw == 9) return 0;
+        if (GDraw == 9) 
+        {
+            switch (lang)
+            {
+                case 0: printf("Ничья! Какая досада (или нет?)\n"); break;
+                case 1: printf("Draw! What a shame (or not?)\n"); break;
+            }
+            return 0;
+        }
         if (GRow == -1 || draw[GRow][GCol] == 1 || win[GRow][GCol] != 0)
         {
             if (bot == 0 || (bot != 0 && plr == 1))
@@ -241,22 +248,42 @@ int gameplay(int GRow, int GCol, int plr)
             }
             else if (bot != 0 && plr == 2)
             {
-                switch (bot)
+                while (1)
                 {
-                    //TODO организовать ботов
-                    case 1: ebot(GRow, GCol, &LRow, &LCol); break;
-                    case 2: mbot(GRow, GCol, &LRow, &LCol); break;
-                    case 3: hbot(GRow, GCol, &LRow, &LCol); break;
+                    GRow = randcell(); GCol = randcell();
+                    if (draw[GRow][GCol] == 0 && win[GRow][GCol] == 0)
+                    {
+                        break;
+                    }
                 }
             }
         }
-        switch (lang)
+        if (bot == 0 || (bot != 0 && plr == 1))
         {
-            case 0: printf("%d-й игрок, выберите клетку (строку и колонку), которую желаете занять. Координаты вашего поля: %d %d. -> ", plr, (GRow + 1), (GCol + 1)); break;
-            case 1: printf("Player %d, choose cell (row and collumn) you wish to occupy. You board located at %d %d coordinates. -> ", plr, (GRow + 1), (GCol + 1)); break;
+            switch (lang)
+            {
+                case 0: printf("%d-й игрок, выберите клетку (строку и колонку), которую желаете занять. Координаты вашего поля: %d %d. -> ", plr, (GRow + 1), (GCol + 1)); break;
+                case 1: printf("Player %d, choose cell (row and collumn) you wish to occupy. You board located at %d %d coordinates. -> ", plr, (GRow + 1), (GCol + 1)); break;
+            }
+            setcell(GRow, GCol, plr, &LRow, &LCol);
         }
-        setcell(GRow, GCol, plr, &LRow, &LCol);
+        else if (bot != 0 && plr == 2)
+        {
+            switch (bot)
+            {
+                case 1: ebot(GRow, GCol, &LRow, &LCol); break;
+                case 2: mbot(GRow, GCol, &LRow, &LCol); break;
+                case 3: hbot(GRow, GCol, &LRow, &LCol); break;
+            }
+        }
+
+        if (localwin(GRow, GCol) == 1)
+        {
+            win[GRow][GCol] = (plr == 1) ? 1 : 2;
+            GDraw++;
+        }
         drawboard();
+
         if (globalwin() == 1)
         {
             if (bot == 0 || (bot != 0 && plr == 1))
@@ -275,9 +302,9 @@ int gameplay(int GRow, int GCol, int plr)
                     case 1: printf("Player, you've lost the game, but you always can come back and try again!\n"); break;
                 } 
             }    
-            drawboard();
             return 0;
         }
+        tm[GRow][GCol]++;
         if (tm[GRow][GCol] == 9)
         {
             draw[GRow][GCol] = 1;
@@ -296,6 +323,7 @@ void setcell(int GRow, int GCol, int plr, int *LRow, int *LCol)
         if (*LRow >= 0 && *LRow < 3 && *LCol >= 0 && *LCol < 3 && board[GRow][GCol][*LRow][*LCol] == ' ') // check if this step is possible
         {
             board[GRow][GCol][*LRow][*LCol] = (plr == 1) ? 'X' : 'O';
+            printf("\n");
             return;
         }
         else 
@@ -309,15 +337,20 @@ void setcell(int GRow, int GCol, int plr, int *LRow, int *LCol)
     }
 }
 
+// easy bot (working just with random)
 void ebot(int GRow, int GCol, int *LRow, int *LCol)
 {
     while (1)
     {
         int row = randcell();
         int col = randcell();
-        if (board[GRow][GCol][row][col])
+        if (board[GRow][GCol][row][col] == ' ')
         {
             *LRow = row; *LCol = col;
+
+            board[GRow][GCol][*LRow][*LCol] = 'O';
+            printf("\n");
+
             switch (lang)
             {
                 case 0: printf("А мы вот так! (%d %d)\n\n", row + 1, col + 1); break;
@@ -328,17 +361,37 @@ void ebot(int GRow, int GCol, int *LRow, int *LCol)
     }
 }
 
+// medium bot (in case of possible win in 1 step, do it to gane victory. If there is not such step, just uses random)
 void mbot(int GRow, int GCol, int *LRow, int *LCol)
 {
-    int pos[3][3] = {0};
-    winpos(&pos, GRow, GCol);
+    int row{-1}, col{-1};
+    winpos(&row, &col, GRow, GCol);
+    if (row == -1)
+    {
+        ebot(GRow, GCol, &row, &col);
+        *LRow = row; *LCol = col;
+        return;
+    }
+
+    *LRow = row; *LCol = col;
+    board[GRow][GCol][*LRow][*LCol] = 'O';
+    printf("\n");
+    
+    switch (lang)
+    {
+        case 0: printf("А мы вот так! (%d %d)\n\n", row + 1, col + 1); break;
+        case 1: printf("Here we go (%d %d)\n\n", row + 1, col + 1); break;
+    }
+    return;
 }
 
+// hard bot ...
 void hbot(int GRow, int GCol, int *LRow, int *LCol)
 {
-
+    //TODO
 }
 
+// function for random generation of cell based on random_device for TRUE random
 int randcell() {
     static std::random_device rd;
     static std::mt19937 gen(rd());
@@ -347,7 +400,87 @@ int randcell() {
     return dist(gen);
 }
 
-void winpos(int (*pos)[3][3], int GRow, int GCol)
+// function for detecting step, that will bring local win for bot
+void winpos(int *lrow, int *lcol, int GRow, int GCol)
 {
+    int wincount{0};
+    int dotzero[2] = {-1};
 
+    // looking for the win position at all rows in the loclal field
+    for (int row{0}; row < RC; row++)
+    {
+        for (int col{0}; col > RC; col++)
+        {
+            if (board[GRow][GCol][row][col] == 'O')
+            {
+                wincount++;
+            }
+            else if (board[GRow][GCol][row][col] == ' ')
+            {
+                dotzero[0] = row; dotzero[1] = col;
+            }
+        }
+        if (wincount == 2)
+        {
+            *lrow = dotzero[0]; *lcol = dotzero[1];
+            return;
+        }
+        wincount = 0;
+    }
+
+    //looking for the win position at all collumns in the local field
+    for (int col{0}; col < RC; col++)
+    {
+        for (int row{0}; row < RC; row++)
+        {
+            if (board[GRow][GCol][row][col] == 'O')
+            {
+                wincount++;
+            }
+            else if (board[GRow][GCol][row][col] == ' ')
+            {
+                dotzero[0] = row; dotzero[1] = col;
+            }
+        }
+        if (wincount == 2)
+        {
+            *lrow = dotzero[0]; *lcol = dotzero[1];
+            return;
+        }
+        wincount = 0;
+    }
+
+    // looking for the win position at diagonals
+    for (int rc{0}; rc < RC; rc++)
+    {
+        if (board[GRow][GCol][rc][rc] == 'O')
+        {
+            wincount++;
+        }
+        else if (board[GRow][GCol][rc][rc] == ' ')
+        {
+            dotzero[0] = rc; dotzero[1] = rc;
+        }
+    }
+    if (wincount == 2)
+    {
+        *lrow = dotzero[0]; *lcol = dotzero[1];
+        return;
+    }
+    for (int rc{3}; rc > 0; rc--)
+    {
+        if (board[GRow][GCol][rc][rc] == 'O')
+        {
+            wincount++;
+        }
+        else if (board[GRow][GCol][rc][rc] == ' ')
+        {
+            dotzero[0] = rc; dotzero[1] = rc;
+        }
+    }
+    if (wincount == 2)
+    {
+        *lrow = dotzero[0]; *lcol = dotzero[1];
+        return;
+    }
 }
